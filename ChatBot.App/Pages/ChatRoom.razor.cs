@@ -11,8 +11,9 @@ namespace ChatBot.App.Pages;
 public partial class ChatRoom : ComponentBase
 {
     private bool _isChatting;
-    private string _username = "TEST";
-    private int _userid = 2;
+    private string? _username;
+    private int _userid;
+    private string? _displayName;
 
     private string? _newMessage;
     private string? _errorMessage;
@@ -43,7 +44,8 @@ public partial class ChatRoom : ComponentBase
             return;
         }
 
-        _username = user!.UserName!;
+        _username = user!.UserName;
+        _displayName = user!.DisplayName;
         _userid = user.Id;
 
         try
@@ -64,11 +66,11 @@ public partial class ChatRoom : ComponentBase
                 .WithUrl(hubUrl)
                 .Build();
 
-            HubConnection.On<string, int, string>("Broadcast", BroadcastMessage);
+            HubConnection.On<string?, int, string?, string>("Broadcast", BroadcastMessage);
 
             await HubConnection.StartAsync();
 
-            await Send($"[Notice] {_username} joined chat room.", HubConstants.CHAT_BOT_NAME, HubConstants.CHAT_BOT_ID);
+            await SendBotMessage($"[Notice] {_displayName}({_username}) joined chat room.");
         }
         catch (Exception e)
         {
@@ -77,9 +79,9 @@ public partial class ChatRoom : ComponentBase
         }
     }
 
-    private void BroadcastMessage(string userName, int userId, string message)
+    private void BroadcastMessage(string? userName, int userId, string? displayName, string message)
     {
-        Messages.Add(new ChatMessageViewModel(DateTimeOffset.UtcNow, message, userId, userName));
+        Messages.Add(new ChatMessageViewModel(DateTimeOffset.UtcNow, message, userId, userName, displayName));
 
         // Inform blazor the UI needs updating
         InvokeAsync(StateHasChanged);
@@ -92,7 +94,7 @@ public partial class ChatRoom : ComponentBase
             return;
         }
 
-        await Send($"[Notice] {_username} left chat room.", HubConstants.CHAT_BOT_NAME, HubConstants.CHAT_BOT_ID);
+        await SendBotMessage($"[Notice] {_displayName}({_username}) left chat room.");
 
         await HubConnection!.StopAsync();
         await HubConnection!.DisposeAsync();
@@ -101,7 +103,12 @@ public partial class ChatRoom : ComponentBase
         _isChatting = false;
     }
 
-    private async Task Send(string message, string userName, int userId)
+    private async Task SendBotMessage(string message)
+    {
+        await Send(HubConstants.CHAT_BOT_MAIL, HubConstants.CHAT_BOT_ID, HubConstants.CHAT_BOT_NAME, message);
+    }
+
+    private async Task Send(string? userName, int userId, string? displayName, string message)
     {
         if (!_isChatting)
         {
@@ -113,9 +120,8 @@ public partial class ChatRoom : ComponentBase
             return;
         }
 
-        await HubConnection!.SendAsync("Broadcast", userName, userId, message);
+        await HubConnection!.SendAsync("Broadcast", userName, userId, displayName, message);
 
         _newMessage = string.Empty;
     }
-
 }

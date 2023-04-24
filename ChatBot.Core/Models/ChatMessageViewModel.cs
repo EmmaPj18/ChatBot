@@ -1,6 +1,12 @@
-﻿namespace ChatBot.Core.Models;
+﻿using ChatBot.Core.Constants;
 
-public sealed record ChatMessageViewModel(DateTimeOffset SendAt, string Message, int UserId, string UserName)
+namespace ChatBot.Core.Models;
+
+public sealed record ChatMessageViewModel(DateTimeOffset SendAt, string Message, int UserId, string? UserName, string? DisplayName)
 {
-    public bool IsNotice => Message.StartsWith("[Notice]");
+    private bool IsNotice => Message.StartsWith("[Notice]");
+
+    public string ApplyCSS => UserId == HubConstants.CHAT_BOT_ID
+        ? (IsNotice ? "notice" : "received")
+        : "sent";
 }

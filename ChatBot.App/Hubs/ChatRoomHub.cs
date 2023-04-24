@@ -5,14 +5,17 @@ namespace ChatBot.App.Hubs;
 public class ChatRoomHub : Hub
 {
     public async Task Broadcast(
-        string message,
+        string? userName,
         int userId,
-        string userName)
+        string? displayName,
+        string message
+        )
     {
-        await Clients.All.SendAsync("Broadcast", 
-            message,
+        await Clients.All.SendAsync("Broadcast",
+            userName,
             userId,
-            userName);
+            displayName,
+            message);
     }
 
     public override async Task OnConnectedAsync()

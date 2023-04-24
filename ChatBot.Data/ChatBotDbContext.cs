@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ChatBot.Data;
 
-public class ChatBotDbContext : IdentityDbContext
+public class ChatBotDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public const string CONNECTION_STRING_NAME = "DefaultConnection";
 

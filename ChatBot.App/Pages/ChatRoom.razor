@@ -10,21 +10,17 @@
 }
 else
 {
-    <div class="alert alert-secondary mt-4" role="alert">
-        <span class="oi oi-person mr-2" aria-hidden="true"></span>
-        <span>You are connected as <b>@_username</b></span>
-        <button class="btn btn-sm btn-warning ml-md-auto" @onclick="@Disconnect">Disconnect</button>
-    </div>
     <div id="scrollbox">
         @foreach (var message in Messages)
         {
-            <div class="@(message.UserId == HubConstants.CHAT_BOT_ID ? "received" : "sent")">
-                <div class="user">@message.UserName</div>
+            <div class="@message.ApplyCSS">
+                <div class="user">@message.DisplayName <small>(@message.UserName)</small></div>
                 <div class="msg">@message.Message</div>
             </div>
         }
+        <br />
         <hr />
         <textarea class="input-lg" placeholder="enter your comment" @bind="@_newMessage"></textarea>
-        <button class="btn btn-default" @onclick="@(async () => await Send(_newMessage, _username, _userid))">Send</button>
+        <button class="btn btn-default" @onclick="@(async () => await Send(_username, _userid, _displayName, _newMessage))">Send</button>
     </div>
 }
