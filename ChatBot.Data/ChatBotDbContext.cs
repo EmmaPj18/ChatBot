@@ -5,6 +5,8 @@ namespace ChatBot.Data;
 
 public class ChatBotDbContext : DbContext
 {
+    public const string CONNECTION_STRING_NAME = "DefaultConnection";
+
     public ChatBotDbContext(DbContextOptions<ChatBotDbContext> options) : base(options)
     {
 
