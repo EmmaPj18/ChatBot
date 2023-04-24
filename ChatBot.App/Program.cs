@@ -1,3 +1,4 @@
+using ChatBot.App.Areas.Identity;
 using ChatBot.App.Hubs;
 using ChatBot.Core.Constants;
 using ChatBot.Core.Entities;
@@ -12,7 +13,7 @@ builder.Services
     .AddDefaultIdentity<User>()
     .AddEntityFrameworkStores<ChatBotDbContext>();
 
-// Add services to the container.
+builder.Services.AddScoped<TokenProvider>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
