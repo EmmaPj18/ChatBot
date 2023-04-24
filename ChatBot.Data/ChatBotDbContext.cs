@@ -1,11 +1,12 @@
 ﻿using ChatBot.Core.Constants;
 using ChatBot.Core.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ChatBot.Data;
 
-public class ChatBotDbContext : DbContext
+public class ChatBotDbContext : IdentityDbContext
 {
     public const string CONNECTION_STRING_NAME = "DefaultConnection";
 
@@ -14,12 +15,17 @@ public class ChatBotDbContext : DbContext
 
     }
 
-    public DbSet<User> Users { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>().Property(e => e.DisplayName)
+           .IsRequired();
+
+        modelBuilder.Entity<User>().HasIndex(e => e.DisplayName)
+            .IsUnique();
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ChatBotDbContext).Assembly);
 
