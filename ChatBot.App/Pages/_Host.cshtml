@@ -1,7 +1,14 @@
 ﻿@page "/"
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 @using Microsoft.AspNetCore.Components.Web
 @namespace ChatBot.App.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    var tokens = new TokenProvider
+    {
+        XsrfToken = Xsrf.GetAndStoreTokens(Context).RequestToken
+    };
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -16,7 +23,7 @@
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
 <body>
-    <component type="typeof(App)" render-mode="ServerPrerendered" />
+    <component type="typeof(App)" param-InitialState="tokens" render-mode="ServerPrerendered" />
 
     <div id="blazor-error-ui">
         <environment include="Staging,Production">

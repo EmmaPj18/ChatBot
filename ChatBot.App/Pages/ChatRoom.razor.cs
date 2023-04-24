@@ -1,6 +1,9 @@
 ﻿using ChatBot.Core.Constants;
+using ChatBot.Core.Entities;
 using ChatBot.Core.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace ChatBot.App.Pages;
@@ -16,14 +19,32 @@ public partial class ChatRoom : ComponentBase
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject]
+    private UserManager<User> UserManager { get; set; } = default!;
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; } = default!;
 
     private List<ChatMessageViewModel> Messages { get; set; } = new();
 
-    private HubConnection HubConnection { get; set; } = default!;
+    private HubConnection? HubConnection { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        // TODO: Validate auth and set _username and _userid
+        var authState = await AuthenticationState;
+        var userClaimPrincipal = authState.User;
+        var user = await UserManager.GetUserAsync(userClaimPrincipal);
+
+        if (!userClaimPrincipal.Identity?.IsAuthenticated ?? false
+            && user == null)
+        {
+            _errorMessage = $"ERROR: You need to log in first to access the bot";
+            _isChatting = false;
+            return;
+        }
+
+        _username = user!.UserName!;
+        _userid = user.Id;
 
         try
         {
@@ -73,8 +94,8 @@ public partial class ChatRoom : ComponentBase
 
         await Send($"[Notice] {_username} left chat room.", HubConstants.CHAT_BOT_NAME, HubConstants.CHAT_BOT_ID);
 
-        await HubConnection.StopAsync();
-        await HubConnection.DisposeAsync();
+        await HubConnection!.StopAsync();
+        await HubConnection!.DisposeAsync();
 
         HubConnection = null;
         _isChatting = false;
@@ -92,7 +113,7 @@ public partial class ChatRoom : ComponentBase
             return;
         }
 
-        await HubConnection.SendAsync("Broadcast", userName, userId, message);
+        await HubConnection!.SendAsync("Broadcast", userName, userId, message);
 
         _newMessage = string.Empty;
     }
