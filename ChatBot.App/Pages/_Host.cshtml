@@ -6,7 +6,7 @@
 @{
     var tokens = new TokenProvider
     {
-        XsrfToken = Xsrf.GetAndStoreTokens(Context).RequestToken
+        XsrfToken = Xsrf.GetAndStoreTokens(HttpContext).RequestToken!
     };
 }
 
