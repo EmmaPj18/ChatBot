@@ -1,0 +1,29 @@
+﻿@page "/chatroom"
+@using ChatBot.Core.Constants;
+
+<h1>ChatBot Room</h1>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="invalid-feedback">@_errorMessage</div>
+    <small id="emailHelp" class="form-text text-muted">@_errorMessage</small>
+}
+else {
+    <div class="alert alert-secondary mt-4" role="alert">
+        <span class="oi oi-person mr-2" aria-hidden="true"></span>
+        <span>You are connected as <b>@_username</b></span>
+        <button class="btn btn-sm btn-warning ml-md-auto" @onclick="@Disconnect">Disconnect</button>
+    </div>
+    <div id="scrollbox">
+        @foreach (var message in Messages)
+        {
+            <div class="@(message.UserId == HubConstants.CHAT_BOT_ID ? "received" : "sent")">
+                <div class="user">@message.UserName</div>
+                <div class="msg">@message.Message</div>
+            </div>
+        }
+        <hr />
+        <textarea class="input-lg" placeholder="enter your comment" @bind="@_newMessage"></textarea>
+        <button class="btn btn-default" @onclick="@(async () => await Send(_newMessage, _username, _userid))">Send</button>
+    </div>
+}
