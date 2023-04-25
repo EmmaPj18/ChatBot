@@ -2,7 +2,7 @@
 
 public sealed class ChatMessage
 {
-    public required int Id { get; set; }
+    public int Id { get; set; }
     public required string Message { get; set; }
     public DateTimeOffset SendAt { get; set; }
     public int UserId { get; set; }

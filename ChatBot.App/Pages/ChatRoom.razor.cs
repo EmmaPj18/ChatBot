@@ -1,14 +1,16 @@
 ﻿using ChatBot.Core.Constants;
 using ChatBot.Core.Entities;
 using ChatBot.Core.Models;
+using ChatBot.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChatBot.App.Pages;
 
-public partial class ChatRoom : ComponentBase
+public partial class ChatRoom : ComponentBase, IAsyncDisposable
 {
     private bool _isChatting;
     private string? _username;
@@ -22,6 +24,8 @@ public partial class ChatRoom : ComponentBase
     private NavigationManager NavigationManager { get; set; } = default!;
     [Inject]
     private UserManager<User> UserManager { get; set; } = default!;
+    [Inject]
+    private ChatBotDbContext Context { get; set; } = default!;
 
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; } = default!;
@@ -57,6 +61,18 @@ public partial class ChatRoom : ComponentBase
             // remove old messages if any
             Messages.Clear();
 
+            var messages = await Context.ChatMessages
+                .AsNoTracking()
+                .Include(x => x.User)
+                .OrderByDescending(x => x.SendAt)
+                .Take(50)
+                .ToListAsync();
+
+            if (messages.Any())
+            {
+                Messages.AddRange(messages.Select(x => new ChatMessageViewModel(x.SendAt, x.Message, x.UserId, x.User.UserName, x.User.DisplayName)));
+            }
+
             // Create the chat client
             string baseUrl = NavigationManager.BaseUri;
 
@@ -66,7 +82,7 @@ public partial class ChatRoom : ComponentBase
                 .WithUrl(hubUrl)
                 .Build();
 
-            HubConnection.On<string?, int, string?, string>("Broadcast", BroadcastMessage);
+            HubConnection.On<string?, int, string?, string>(HubConstants.CHAT_ROOM_METHOD, BroadcastMessage);
 
             await HubConnection.StartAsync();
 
@@ -81,13 +97,15 @@ public partial class ChatRoom : ComponentBase
 
     private void BroadcastMessage(string? userName, int userId, string? displayName, string message)
     {
-        Messages.Add(new ChatMessageViewModel(DateTimeOffset.UtcNow, message, userId, userName, displayName));
+        var chatMessage = new ChatMessageViewModel(DateTimeOffset.UtcNow, message, userId, userName, displayName);
+
+        Messages.Add(chatMessage);
 
         // Inform blazor the UI needs updating
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task Disconnect()
+    public async ValueTask DisposeAsync()
     {
         if (!_isChatting)
         {
@@ -105,22 +123,41 @@ public partial class ChatRoom : ComponentBase
 
     private async Task SendBotMessage(string message)
     {
-        await Send(HubConstants.CHAT_BOT_MAIL, HubConstants.CHAT_BOT_ID, HubConstants.CHAT_BOT_NAME, message);
+        var chatMessage = new ChatMessageViewModel(
+            DateTimeOffset.UtcNow,
+            message,
+            HubConstants.CHAT_BOT_ID,
+            HubConstants.CHAT_BOT_MAIL,
+            HubConstants.CHAT_BOT_NAME);
+
+        await SendInternal(chatMessage);
     }
 
-    private async Task Send(string? userName, int userId, string? displayName, string message)
+    private async Task SendMessage(string? userName, int userId, string? displayName, string message)
+    {
+        var chatMessage = new ChatMessageViewModel(
+            DateTimeOffset.UtcNow,
+            message,
+            userId,
+            userName,
+            displayName);
+
+        await SendInternal(chatMessage);
+    }
+
+    private async Task SendInternal(ChatMessageViewModel chatMessage)
     {
         if (!_isChatting)
         {
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(message))
+        if (string.IsNullOrWhiteSpace(chatMessage.Message))
         {
             return;
         }
 
-        await HubConnection!.SendAsync("Broadcast", userName, userId, displayName, message);
+        await HubConnection!.SendAsync(HubConstants.CHAT_ROOM_METHOD, chatMessage);
 
         _newMessage = string.Empty;
     }

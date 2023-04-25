@@ -11,16 +11,17 @@
 else
 {
     <div id="scrollbox">
-        @foreach (var message in Messages)
+        @foreach (var message in Messages.OrderByDescending(x => x.SendAt))
         {
             <div class="@message.ApplyCSS">
                 <div class="user">@message.DisplayName <small>(@message.UserName)</small></div>
+                <small>@message.SendAt.DateTime.ToShortDateString() - @message.SendAt.DateTime.ToShortTimeString()</small>
                 <div class="msg">@message.Message</div>
             </div>
         }
         <br />
         <hr />
         <textarea class="input-lg" placeholder="enter your comment" @bind="@_newMessage"></textarea>
-        <button class="btn btn-default" @onclick="@(async () => await Send(_username, _userid, _displayName, _newMessage))">Send</button>
+        <button class="btn btn-default" @onclick="@(async () => await SendMessage(_username, _userid, _displayName, _newMessage))">Send</button>
     </div>
 }
