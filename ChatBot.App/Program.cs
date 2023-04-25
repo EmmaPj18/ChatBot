@@ -1,7 +1,10 @@
 using ChatBot.App.Areas.Identity;
 using ChatBot.App.Hubs;
+using ChatBot.App.Services;
 using ChatBot.Core.Constants;
 using ChatBot.Core.Entities;
+using ChatBot.Core.Interface;
+using ChatBot.Core.Services;
 using ChatBot.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,10 +13,15 @@ builder.Services
     .AddChatBotDbContext(builder.Configuration);
 
 builder.Services
-    .AddDefaultIdentity<User>()
+    .AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ChatBotDbContext>();
 
 builder.Services.AddScoped<TokenProvider>();
+builder.Services.AddSingleton<IBotCommandService, BotCommandService>();
+builder.Services.AddSingleton<IBotCommandRequestService, BotCommandRequestService>();
+builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
+builder.Services.AddHostedService<BotResponseBackgroundService>();
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
