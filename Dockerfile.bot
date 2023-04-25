@@ -1,0 +1,21 @@
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+RUN dotnet --version
+WORKDIR /src
+COPY ["ChatBot.Bot/ChatBot.Bot.csproj", "ChatBot.Bot/"]
+COPY ["ChatBot.Core/ChatBot.Core.csproj", "ChatBot.Core/"]
+COPY ["ChatBot.Data/ChatBot.Data.csproj", "ChatBot.Data/"]
+RUN dotnet restore "ChatBot.Bot/ChatBot.Bot.csproj"
+COPY . .
+WORKDIR "/src/ChatBot.Bot"
+RUN dotnet build "ChatBot.Bot.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "ChatBot.Bot.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "ChatBot.Bot.dll"]

@@ -9,9 +9,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatBot.Data", "ChatBot.Dat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatBot.App", "ChatBot.App\ChatBot.App.csproj", "{8808CD94-A4C2-48B4-9232-FF1EDF05666B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatBot.Bot", "ChatBot.Bot\ChatBot.Bot.csproj", "{AF6D7846-8852-4E5B-B6D0-2A9966CCDBAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatBot.Bot", "ChatBot.Bot\ChatBot.Bot.csproj", "{AF6D7846-8852-4E5B-B6D0-2A9966CCDBAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatBot.Tests", "ChatBot.Tests\ChatBot.Tests.csproj", "{E457CE71-4BE3-42D3-91DF-7399333344CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatBot.Tests", "ChatBot.Tests\ChatBot.Tests.csproj", "{E457CE71-4BE3-42D3-91DF-7399333344CB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{60DFF884-4AAE-4D7F-81FF-6AE2D8C571AB}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Dockerfile.app = Dockerfile.app
+		Dockerfile.bot = Dockerfile.bot
+		docket-compose.yml = docket-compose.yml
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,0 +1,86 @@
+version: '3.8'
+services:
+  db:
+    container_name: db
+    environment: 
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Admin123*"
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    networks:
+      - chat.nt
+    ports: 
+      - "1433:1433"
+    restart: on-failure
+    volumes:
+      - ./volumes/mssql/data:/var/opt/mssql/data
+      - ./volumes/mssql/logs:/var/opt/mssql/log
+      - ./volumes/mssql/secrets:/var/opt/mssql/secrets
+  
+  
+  rabbit:
+    hostname: rabbit
+    container_name: rabbit
+    image: rabbitmq:3-management
+    environment: 
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: Admin123
+    networks: 
+      - chat.nt
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    restart: on-failure
+    volumes: 
+      - ./volumes/rabbit:/var/lib/rabbitmq/mnesia
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: app
+    depends_on: 
+      - rabbit
+      - db
+    environment: 
+      - DBDATABASE=chat
+      - DBHOST=db
+      - DBPASSWORD=Admin123*
+      - DBPORT=1433
+      - DBUSER=sa
+      - ENGINE=mssql
+      - ConnectionStrings__RabbitConnectionString=amqp://admin:Admin123@rabbit:5672
+    links: 
+      - db
+      - rabbit
+    networks:
+      - chat.nt
+    ports: 
+      - "4000:80"
+    restart: on-failure
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    container_name: bot
+    depends_on: 
+      - rabbit
+      - db
+    environment: 
+      - DBDATABASE=chat
+      - DBHOST=db
+      - DBPASSWORD=Admin123*
+      - DBPORT=1433
+      - DBUSER=sa
+      - ENGINE=mssql
+      - ConnectionStrings__RabbitConnectionString=amqp://admin:Admin123@rabbit:5672
+      - StockApi__Url=https://stooq.com/q/l/
+    links: 
+      - rabbit
+    networks:
+      - chat.nt
+    restart: on-failure
+
+networks: 
+  chat.nt:
+    external: false

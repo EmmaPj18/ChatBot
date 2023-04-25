@@ -1,9 +1,12 @@
 ﻿using ChatBot.Bot.Models;
 using ChatBot.Bot.Options;
 using ChatBot.Core.Constants;
+using ChatBot.Core.Entities;
 using ChatBot.Core.Interface;
 using ChatBot.Core.Models;
+using ChatBot.Data;
 using CsvHelper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,21 +19,25 @@ public class BotRequestBackgroundService : BackgroundService
     private readonly ILogger<BotRequestBackgroundService> _logger;
     private readonly StockApiOptions _stockApiOptions;
     private readonly IRabbitMqService _rabbitMqService;
+    private readonly ChatBotDbContext _chatBotDbContext;
     private readonly IHttpClientFactory _httpClientFactory;
 
     public BotRequestBackgroundService(
         ILogger<BotRequestBackgroundService> logger,
         IOptions<StockApiOptions> stockApiOptions,
         IRabbitMqService rabbitMqService,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ChatBotDbContext chatBotDbContext)
     {
         _logger = logger;
         _stockApiOptions = stockApiOptions.Value;
         _rabbitMqService = rabbitMqService;
         _httpClientFactory = httpClientFactory;
+        _chatBotDbContext = chatBotDbContext;
 
         if (string.IsNullOrWhiteSpace(_stockApiOptions.Url))
             throw new ArgumentNullException(nameof(_stockApiOptions.Url));
+
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -54,8 +61,48 @@ public class BotRequestBackgroundService : BackgroundService
     {
         var chatMessage = new ChatMessageViewModel(DateTimeOffset.Now, message, HubConstants.CHAT_BOT_ID, HubConstants.CHAT_BOT_MAIL, HubConstants.CHAT_BOT_NAME);
 
+        chatMessage = await SaveMessage(chatMessage);
+
         _logger.LogInformation("Sending Chat Message: {msg}", chatMessage);
         await _rabbitMqService.Produce(QueueNames.CHAT_QUEUE, chatMessage, ct);
+    }
+
+    private async Task<ChatMessageViewModel> SaveMessage(ChatMessageViewModel chatMessage)
+    {
+        var user = await _chatBotDbContext.Users
+            .Where(x => x.Id == chatMessage.UserId)
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            return ConstructBotChatMessage("User not found");
+        }
+
+        var message = new ChatMessage
+        {
+            Message = chatMessage.Message,
+            UserId = chatMessage.UserId,
+            User = user,
+        };
+
+        _chatBotDbContext.ChatMessages.Add(message);
+        await _chatBotDbContext.SaveChangesAsync();
+
+        chatMessage = chatMessage with { SendAt = message.SendAt };
+
+        return chatMessage;
+    }
+
+    private static ChatMessageViewModel ConstructBotChatMessage(string message)
+    {
+        var chatMessage = new ChatMessageViewModel(
+            DateTimeOffset.UtcNow,
+            message,
+            HubConstants.CHAT_BOT_ID,
+            HubConstants.CHAT_BOT_MAIL,
+            HubConstants.CHAT_BOT_NAME);
+
+        return chatMessage;
     }
 
     private async Task<string> GetStockMessage(string parameter, CancellationToken ct)

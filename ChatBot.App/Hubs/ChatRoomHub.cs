@@ -110,7 +110,7 @@ public class ChatRoomHub : Hub
 
     }
 
-    private ChatMessageViewModel ConstructBotChatMessage(string message)
+    private static ChatMessageViewModel ConstructBotChatMessage(string message)
     {
         var chatMessage = new ChatMessageViewModel(
             DateTimeOffset.UtcNow,
