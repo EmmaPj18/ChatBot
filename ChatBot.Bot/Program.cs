@@ -8,7 +8,7 @@ using ChatBot.Core.Services;
 using ChatBot.Bot.Options;
 using Microsoft.Extensions.Configuration;
 
-var host = Host.CreateDefaultBuilder(args)
+using var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
         services.AddHttpClient();
@@ -22,3 +22,4 @@ var host = Host.CreateDefaultBuilder(args)
     .Build();
 
 await host.StartAsync();
+await host.WaitForShutdownAsync();

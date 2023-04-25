@@ -14,7 +14,7 @@ using System.Globalization;
 
 namespace ChatBot.Bot.Services;
 
-public class BotRequestBackgroundService : BackgroundService
+public class BotRequestBackgroundService : IHostedService
 {
     private readonly ILogger<BotRequestBackgroundService> _logger;
     private readonly StockApiOptions _stockApiOptions;
@@ -38,12 +38,6 @@ public class BotRequestBackgroundService : BackgroundService
         if (string.IsNullOrWhiteSpace(_stockApiOptions.Url))
             throw new ArgumentNullException(nameof(_stockApiOptions.Url));
 
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken ct)
-    {
-        _logger.LogInformation($"Setting Consume Queue Method on function {nameof(ExecuteAsync)}");
-        await _rabbitMqService.Consume<CommandInformation>(QueueNames.BOT_QUEUE, ResolveStockCode, ct);
     }
 
     private async Task ResolveStockCode(CommandInformation command, CancellationToken ct = default)
@@ -123,7 +117,7 @@ public class BotRequestBackgroundService : BackgroundService
 
             var stockData = csvReader.GetRecord<StockData>();
 
-            if (stockData == null || stockData.Close != "N/D")
+            if (stockData == null || stockData.Close == "N/D")
                 throw new Exception("Data cannot be found for the stock code");
 
             return $"{stockData.Symbol} quote is ${stockData.Close} per share.";
@@ -134,5 +128,17 @@ public class BotRequestBackgroundService : BackgroundService
 
             return $"Error trying to read stock for code {parameter}. {e.Message}";
         }
+    }
+
+    public async Task StartAsync(CancellationToken ct)
+    {
+        _logger.LogInformation($"Setting Consume Queue Method on function {nameof(StartAsync)}");
+        await _rabbitMqService.Consume<CommandInformation>(QueueNames.BOT_QUEUE, ResolveStockCode, ct);
+    }
+
+    public Task StopAsync(CancellationToken ct)
+    {
+        _rabbitMqService.Dispose();
+        return Task.CompletedTask;
     }
 }
