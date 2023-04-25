@@ -9,13 +9,14 @@ namespace ChatBot.Core.Services;
 
 public class RabbitMqService : IRabbitMqService
 {
+    private const string RABBIT_CONNECTION_STRING_NAME = "RabbitConnectionString";
     private readonly IConnection _connection;
     private readonly IModel _channel;
     private readonly ILogger<RabbitMqService> _logger;
     public RabbitMqService(IConfiguration configuration, ILogger<RabbitMqService> logger)
     {
         _logger = logger;
-        var connectionString = configuration.GetConnectionString("RabbitMq");
+        var connectionString = configuration.GetConnectionString(RABBIT_CONNECTION_STRING_NAME);
 
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("RabbitMq connection string is empty");

@@ -16,7 +16,6 @@ services:
       - ./volumes/mssql/logs:/var/opt/mssql/log
       - ./volumes/mssql/secrets:/var/opt/mssql/secrets
   
-  
   rabbit:
     hostname: rabbit
     container_name: rabbit
