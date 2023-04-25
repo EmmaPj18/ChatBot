@@ -35,15 +35,14 @@ public sealed partial class BotCommandService : IBotCommandService
 
         if (commandInfo == null)
         {
-            var error = BotCommandConstants.ERROR_COMMAND_DEFAULT;
-
             if (!text.StartsWith("/"))
-                error = BotCommandConstants.ERROR_INVALID_FORMAT;
+                return BotCommandConstants.ERROR_INVALID_FORMAT;
+            
 
             if (!text.Contains('='))
-                error = BotCommandConstants.ERROR_PARAMETER_NOT_FOUND;
+                return BotCommandConstants.ERROR_PARAMETER_NOT_FOUND;
 
-            return error;
+            return BotCommandConstants.ERROR_COMMAND_DEFAULT;
         }
 
         if (!_availableCommands.Contains(commandInfo.Command))
